@@ -1,0 +1,104 @@
+---
+title: "Problems 2"
+author: "Malay Basu (malay@uab.edu)"
+output: pdf_document
+---
+
+# Problem 1
+
+Write an R script that takes two arguments: (1) a fasta file name, (2) a sequence ID. The script should print out the sequence matching the id in FASTA format to the terminal.
+
+fasta_parser.R
+
+```{r}
+#!/usr/bin/Rscript
+
+# this will return all the arguments that have been based to the system, take the command line and pass through args
+# trailingOnly = T will avoid the program name
+args <- commandArgs(trailingOnly = T)
+# take the filename from the terminal gitopt standard library in linux, have packages like it in R as well, insteads of hardcoding the filename
+id <- read.table(args[1])[,1]
+filename <- args[2]
+# don't need to uncompress it to read it
+fas_file <- file(filename, "r")
+
+# pass ids into vector
+
+# extract all the sequence IDs from the swiss prot file ("uniprot_sprot.fasta.gz")
+# read the file line by line so that the computer is not a bottleneck, trying to read the whole file in with read.table() will take a long time
+
+# an elastic match, need to terminate on some condition
+pattern <- "^\\>sp\\|(\\S+)\\|" 
+
+# to get the fasta sequence for only those where the ID is matched, we're building a "look ahead" parser
+#id <- "Q6GZX3"
+inside <- FALSE
+buff <- c("")
+
+# print the IDS and the description 
+while(length(line <- readLines(fas_file, n=1)) >0) {
+  m <- regexec(pattern, line, perl=T)
+  if(m[[1]][1] != -1) { # ID line
+    s <- regmatches(line, m)
+    if(s[[1]][2] %in% id) { #if sequence matches ID of choice
+      inside <- TRUE  # switch on flag
+      buff <- c(buff, line)  # store line in buffer
+    } else{
+      if(inside) {
+        cat(buff, sep = "\n")
+        inside = FALSE #need this with multiple IDs
+      } else {}
+    }
+  } else { #sequence line
+    if(inside) {
+      buff <- c(buff, line)
+    } else{}
+  }
+}
+#for the last sequence where there will not be another ID
+if(inside) {
+  cat(buff, sep = "\n")
+}
+
+close(fas_file)
+
+```
+
+
+# Problem 2
+
+Using `wget` download BLOSUM62 matrix from NCBI FTP server (ftp://ftp.ncbi.nih.gov/blast/matrices/BLOSUM62). Process it in anyway you can and read it in R as a matrix, a dataframe, or a list. You should store the data such a way that you can call the score given two amino acids as key as a fast lookup table. Read the accompanied `ex_align.fas` file and calculate the score of the given alignment. Consider each indel has score 0. The alignment file is in aligned fasta format.
+
+blosum.R
+
+```{r}
+# Using `wget` download BLOSUM62 matrix from NCBI FTP server (ftp://ftp.ncbi.nih.gov/blast/matrices/BLOSUM62). Process it in anyway you can and read it in R as a matrix, a dataframe, or a list. You should store the data such a way that you can call the score given two amino acids as key as a fast lookup table. Read the accompanied `ex_align.fas` file and calculate the score of the given alignment. Consider each indel has score 0. The alignment file is in aligned fasta format.
+
+#!/usr/bin/Rscript
+# install.packages("seqinr")
+library(seqinr)
+
+args <- commandArgs(trailingOnly = T)
+blosum <- read.table("~/local_drive/BLOSUM62")
+fas_file <- read.fasta(args[1], seqtype = "AA")
+#fas_file <- read.fasta("~/local_drive/05-Problemset_2/ex_align.fas", seqtype = "AA")
+seq1 <- fas_file[["P1"]]
+seq2 <- fas_file[["P2"]]
+
+scores <- c()
+
+for(i in 1:length(seq1)){
+  a <- seq1[i]
+  b <- seq2[i]
+  c <- blosum[a,b]
+#  cat(a, b, c, "\n")
+  scores <- c(scores, c)
+}
+
+d = sum(scores)/length(seq1)
+
+cat("similarity score = ", d, "\n")
+
+```
+
+

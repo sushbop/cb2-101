@@ -9,8 +9,6 @@ filename <- args[2]
 # don't need to uncompress it to read it
 fas_file <- file(filename, "r")
 
-# pass ids into vector
-
 # extract all the sequence IDs from the swiss prot file ("uniprot_sprot.fasta.gz")
 # read the file line by line so that the computer is not a bottleneck, trying to read the whole file in with read.table() will take a long time
 
